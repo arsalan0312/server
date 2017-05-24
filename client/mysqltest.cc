@@ -814,8 +814,7 @@ public:
 LogFile log_file;
 LogFile progress_file;
 
-void replace_dynstr_append_mem(DYNAMIC_STRING *ds, const char *val,
-                               int len);
+void replace_dynstr_append_mem(DYNAMIC_STRING *ds, const char *val, size_t len);
 void replace_dynstr_append(DYNAMIC_STRING *ds, const char *val);
 void replace_dynstr_append_uint(DYNAMIC_STRING *ds, uint val);
 void dynstr_append_sorted(DYNAMIC_STRING* ds, DYNAMIC_STRING* ds_input,
@@ -2643,6 +2642,7 @@ void var_query_set(VAR *var, const char *query, const char** query_end)
   if (!mysql)
   {
     struct st_command command;
+    DBUG_ASSERT(query_end);
     memset(&command, 0, sizeof(command));
     command.query= (char*)query;
     command.first_word_len= (*query_end - query);
@@ -7509,7 +7509,7 @@ void free_win_path_patterns()
   => all \ from c:\mysql\m... until next space is converted into /
 */
 
-void fix_win_paths(const char *val, int len)
+void fix_win_paths(const char *val, size_t len)
 {
   uint i;
   char *p;
@@ -11010,7 +11010,7 @@ void free_pointer_array(POINTER_ARRAY *pa)
 
 /* Append the string to ds, with optional replace */
 void replace_dynstr_append_mem(DYNAMIC_STRING *ds,
-                               const char *val, int len)
+                               const char *val, size_t len)
 {
   char lower[512];
 #ifdef __WIN__
