@@ -1395,7 +1395,7 @@ SPIDER_TRX *spider_get_trx(
         pthread_mutex_unlock(&spider_allocated_thds_mutex);
         trx->registed_allocated_thds = TRUE;
       }
-      *thd_ha_data(thd, spider_hton_ptr) = (void *) trx;
+      thd_set_ha_data(thd, spider_hton_ptr, trx);
     }
   }
 
@@ -1511,7 +1511,8 @@ int spider_free_trx(
   bool need_lock
 ) {
   DBUG_ENTER("spider_free_trx");
-  if (trx->thd)
+  THD *thd = trx->thd;
+  if (thd)
   {
     if (trx->registed_allocated_thds)
     {
@@ -1519,18 +1520,19 @@ int spider_free_trx(
         pthread_mutex_lock(&spider_allocated_thds_mutex);
 #ifdef HASH_UPDATE_WITH_HASH_VALUE
       my_hash_delete_with_hash_value(&spider_allocated_thds,
-        trx->thd_hash_value, (uchar*) trx->thd);
+        trx->thd_hash_value, (uchar*) thd);
 #else
-      my_hash_delete(&spider_allocated_thds, (uchar*) trx->thd);
+      my_hash_delete(&spider_allocated_thds, (uchar*) thd);
 #endif
       if (need_lock)
         pthread_mutex_unlock(&spider_allocated_thds_mutex);
     }
-    *thd_ha_data(trx->thd, spider_hton_ptr) = (void *) NULL;
   }
   spider_free_trx_alloc(trx);
   spider_merge_mem_calc(trx, TRUE);
   spider_free(NULL, trx, MYF(0));
+  if (thd)
+    thd_set_ha_data(thd, spider_hton_ptr, NULL);
   DBUG_RETURN(0);
 }
 
