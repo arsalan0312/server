@@ -1702,29 +1702,7 @@ copy_back()
 		ds_data = NULL;
 	}
 
-	/* copy redo logs */
-
-	dst_dir = (srv_log_group_home_dir && *srv_log_group_home_dir)
-				? srv_log_group_home_dir : mysql_data_home;
-
-	ds_data = ds_create(dst_dir, DS_TYPE_LOCAL);
-
-	for (uint i = 0; i <= SRV_N_LOG_FILES_MAX + 1; i++) {
-		char filename[20];
-		sprintf(filename, "ib_logfile%u", i);
-
-		if (!file_exists(filename)) {
-			continue;
-		}
-
-		if (!(ret = copy_or_move_file(filename, filename,
-					      dst_dir, 1))) {
-			goto cleanup;
-		}
-	}
-
-	ds_destroy(ds_data);
-	ds_data = NULL;
+	/* --prepare does not leave any redo log */
 
 	/* copy innodb system tablespace(s) */
 
@@ -1799,11 +1777,6 @@ copy_back()
 
 		/* skip undo tablespaces */
 		if (sscanf(filename, "undo%d%c", &i_tmp, &c_tmp) == 1) {
-			continue;
-		}
-
-		/* skip redo logs */
-		if (sscanf(filename, "ib_logfile%d%c", &i_tmp, &c_tmp) == 1) {
 			continue;
 		}
 
