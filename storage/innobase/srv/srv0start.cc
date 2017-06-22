@@ -1472,6 +1472,8 @@ innobase_start_or_create_for_mysql()
 	size_t		dirnamelen;
 	unsigned	i = 0;
 
+	ut_ad(srv_operation == SRV_OPERATION_NORMAL || srv_operation == SRV_OPERATION_RESTORE);
+
 	if (srv_force_recovery == SRV_FORCE_NO_LOG_REDO) {
 		srv_read_only_mode = true;
 	}
@@ -2593,7 +2595,7 @@ files_checked:
 		srv_start_state_set(SRV_START_STATE_MASTER);
 	}
 
-	if (!srv_read_only_mode
+	if (!srv_read_only_mode && srv_operation == SRV_OPERATION_NORMAL
 	    && srv_force_recovery < SRV_FORCE_NO_BACKGROUND) {
 		srv_undo_sources = true;
 		/* Create the dict stats gathering thread */
