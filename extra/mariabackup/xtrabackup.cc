@@ -5182,6 +5182,12 @@ error_cleanup:
 		/* In case FSP_SIZE was increased by .delta files,
 		we must extend the files accordingly. MDEV-11556 only
 		covers tablespace file extension via the redo log. */
+
+		/* FIXME: Call xb_load_single_table_tablespaces() here!
+		Unlike the InnoDB startup before MariaDB 10.2,
+		here we would only know the innodb_system tablespace,
+		possible undo tablespaces, and any single-table tablespaces
+		for which any redo log was applied. */
 		mutex_enter(&fil_system->mutex);
 
 		for (fil_space_t* space
