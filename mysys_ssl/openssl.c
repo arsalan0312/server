@@ -37,12 +37,15 @@ typedef void *(*CRYPTO_malloc_t)(size_t);
 #define CRYPTO_free     free
 #endif
 
-static uint allocated_size, allocated_count;
+static uint testing, alloc_size, alloc_count;
 
 static void *coc_malloc(size_t size)
 {
-  allocated_size+= size;
-  allocated_count++;
+  if (unlikely(testing))
+  {
+    alloc_size+= size;
+    alloc_count++;
+  }
   return malloc(size);
 }
 
@@ -51,21 +54,24 @@ int check_openssl_compatibility()
   EVP_CIPHER_CTX *evp_ctx;
   EVP_MD_CTX     *md5_ctx;
 
-  CRYPTO_set_mem_functions((CRYPTO_malloc_t)coc_malloc, CRYPTO_realloc, CRYPTO_free);
+  if (!CRYPTO_set_mem_functions((CRYPTO_malloc_t)coc_malloc, CRYPTO_realloc,
+                                CRYPTO_free))
+    return 1;
 
-  allocated_size= allocated_count= 0;
+  testing= 1;
+  alloc_size= alloc_count= 0;
   evp_ctx= EVP_CIPHER_CTX_new();
   EVP_CIPHER_CTX_free(evp_ctx);
-  if (allocated_count > 1 || allocated_size > EVP_CIPHER_CTX_SIZE)
+  if (alloc_count != 1 || !alloc_size || alloc_size > EVP_CIPHER_CTX_SIZE)
     return 1;
 
-  allocated_size= allocated_count= 0;
+  alloc_size= alloc_count= 0;
   md5_ctx= EVP_MD_CTX_create();
   EVP_MD_CTX_destroy(md5_ctx);
-  if (allocated_count > 1 || allocated_size > EVP_MD_CTX_SIZE)
+  if (alloc_count != 1 || !alloc_size || alloc_size > EVP_MD_CTX_SIZE)
     return 1;
 
-  CRYPTO_set_mem_functions(CRYPTO_malloc, CRYPTO_realloc, CRYPTO_free);
+  testing= 0;
   return 0;
 }
 #endif
